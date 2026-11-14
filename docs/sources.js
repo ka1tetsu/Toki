@@ -47,7 +47,7 @@
       {
         id: 'wikipedia', name: 'Wikipedia',
         search: async (q) => {
-          const d = await json(`${wiki(q)}/w/api.php?action=query&list=search&srlimit=8&srinfo=suggestion&format=json&origin=*&srsearch=${enc(q)}`);
+          const d = await json(`${wiki(q)}/w/api.php?action=query&list=search&srlimit=4&srinfo=suggestion&format=json&origin=*&srsearch=${enc(q)}`);
           return {
             suggestion: d.query.searchinfo && d.query.searchinfo.suggestion,
             results: d.query.search.map((r) => ({
@@ -198,7 +198,7 @@
     function weights(q) {
       const tech = TECH.test(q), cjk = isCJK(q);
       const w = {
-        toki: 1.6, bing: 1.5, 'duckduckgo-web': 1.5, yahoo: 1.3, wikipedia: 1.2, mwmbl: 1.1, duckduckgo: 1.0,
+        toki: 1.6, bing: 1.5, 'duckduckgo-web': 1.5, yahoo: 1.3, wikipedia: 1.0, mwmbl: 1.1, duckduckgo: 1.0,
         stackoverflow: 0.3, github: 0.3, hackernews: 0.25, archive: 0.2, openlibrary: 0.2, arxiv: 0.2,
       };
       if (tech) Object.assign(w, { stackoverflow: 1.3, github: 1.0, hackernews: 0.6 });
@@ -217,6 +217,12 @@
       return terms.filter((x) => t.includes(x)).length / terms.length;
     };
     const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
+    // サイトの単位（example.co.jp や wikipedia.org のような登録ドメイン相当）
+    const siteOf = (u) => {
+      const parts = hostOf(u).split('.');
+      const n = parts.length > 2 && /^(co|com|ne|or|ac|go|org|net|gr|ed|lg)$/.test(parts[parts.length - 2]) && parts[parts.length - 1].length === 2 ? 3 : 2;
+      return parts.slice(-n).join('.');
+    };
     const keyOf = (u) => String(u).replace(/^https?:\/\/(www\.)?/, '').replace(/[/#?]+$/, '').toLowerCase();
 
     // --- 順位の統合 -----------------------------------------------------------
@@ -256,16 +262,19 @@
         const match = any === 0 ? 0.35 : 0.7 + 0.3 * any;
         e.score = e.rrf * match * (1 + 0.3 * title) * exact * foreign;
       }
-      // 多様化（MMR・Carbonell & Goldstein 1998 の考え方）: 同じサイトが続くほど割り引く
-      const out = [], perHost = new Map();
+      // 多様化（MMR・Carbonell & Goldstein 1998 の考え方）: 1つのサイトが上位を占めないよう、
+      // 同じサイト（ja.wikipedia.org と en.wikipedia.org は同じ wikipedia.org と数える）の
+      // 2件目は少し、3件目以降は大きく割り引く
+      const crowd = (n) => (n === 0 ? 1 : n === 1 ? 0.8 : 0.8 * Math.pow(0.3, n - 1));
+      const out = [], perSite = new Map();
       while (all.length) {
         let best = 0, bestVal = -1;
         all.forEach((e, i) => {
-          const v = e.score * Math.pow(0.9, perHost.get(hostOf(e.url)) || 0);
+          const v = e.score * crowd(perSite.get(siteOf(e.url)) || 0);
           if (v > bestVal) { bestVal = v; best = i; }
         });
         const [e] = all.splice(best, 1);
-        perHost.set(hostOf(e.url), (perHost.get(hostOf(e.url)) || 0) + 1);
+        perSite.set(siteOf(e.url), (perSite.get(siteOf(e.url)) || 0) + 1);
         out.push({ url: e.url, title: e.title, snippet: e.snippet || '', source: e.sources.join(' + '), score: bestVal });
       }
       return out;
