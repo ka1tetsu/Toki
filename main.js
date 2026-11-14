@@ -13,7 +13,7 @@ const PROXY = process.env.TOKI_PROXY;
 if (PROXY) app.commandLine.appendSwitch('proxy-server', PROXY);
 
 // toki:// = 内蔵ページ（ホーム・Toki 検索・クローラー）
-protocol.registerSchemesAsPrivileged([{ scheme: 'toki', privileges: { standard: true, secure: true } }]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'toki', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 
 let win;
 const send = (cmd) => () => win && win.webContents.send('cmd', cmd);

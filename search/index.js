@@ -32,18 +32,28 @@ function search(q, limit = 20) {
   if (!terms.length) return [];
   if (terms.every((t) => [...t].length >= 3)) {
     const match = terms.map((t) => '"' + t.replace(/"/g, '""') + '"').join(' AND ');
-    return db.prepare(`
+    // bm25() に列ごとの重みを渡す（url, title, body）。題名の一致を本文の 10 倍に数える
+    const run = (m) => db.prepare(`
       SELECT url, title, snippet(pages, 2, '', '', '…', 64) AS snippet
       FROM pages WHERE pages MATCH ? ORDER BY bm25(pages, 0, 10, 1) LIMIT ?
-    `).all(match, limit);
+    `).all(m, limit);
+    const rows = run(match);
+    // 全語一致が少ないときは、どれかの語に一致するページで補う（全語一致が先）
+    if (rows.length >= 3 || terms.length < 2) return rows;
+    const seen = new Set(rows.map((r) => r.url));
+    return rows.concat(run(match.replace(/ AND /g, ' OR ')).filter((r) => !seen.has(r.url))).slice(0, limit);
   }
   // 3文字未満の語（「猫」など）は trigram で引けないので LIKE で検索
   const like = terms.map((t) => '%' + t.replace(/[\\%_]/g, '\\$&') + '%');
   const where = like.map(() => `(title LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\')`).join(' AND ');
   return db.prepare(`
     SELECT url, title, substr(body, max(1, instr(lower(body), lower(?)) - 30), 160) AS snippet
-    FROM pages WHERE ${where} ORDER BY (title LIKE ? ESCAPE '\\') DESC LIMIT ?
-  `).all(terms[0], ...like.flatMap((l) => [l, l]), like[0], limit);
+    FROM pages WHERE ${where}
+    ORDER BY (title LIKE ? ESCAPE '\\') DESC,
+      -- 本文の長さあたりの出現回数（長いページが有利になりすぎないようにする）
+      (length(body) - length(replace(lower(body), lower(?), ''))) * 1.0 / (length(body) + 500) DESC
+    LIMIT ?
+  `).all(terms[0], ...like.flatMap((l) => [l, l]), like[0], terms[0], limit);
 }
 
 // --- クローラー -----------------------------------------------------------

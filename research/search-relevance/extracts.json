@@ -1,0 +1,164 @@
+{
+ "title": "Toki 検索の検索性を上げる方法",
+ "question": "複数の外部ソースと自前の小さな全文索引を混ぜて返す検索エンジンで、関連するものを上に出すには何をすればよいか。",
+ "stopped": "約束で打ち切った（依頼の中心が実装のため1周で止めた）。要る主張6個のうち5個に原文が付き、1個は一部だけ。",
+ "claims": [
+  {
+   "claim": "この分野の知見はどこに集まっているか（場）",
+   "status": "付いた",
+   "note": "検索役2本が挙げた場は SIGIR・CIKM・Foundations and Trends in IR・Stanford の IR 教科書・SQLite の公式文書・言語処理学会・企業の技術ブログ。",
+   "quotes": [
+    {
+     "file": "arguello-2017-aggregated-search.txt",
+     "line": 72,
+     "text": "The goal of aggregated search is to provide integrated search across",
+     "ja": "統合検索（aggregated search）の目的は、横断した検索を一体として提供することである",
+     "mark": "〔論文〕"
+    }
+   ]
+  },
+  {
+   "claim": "複数ソースの順位付きリストを1本に混ぜる手法と効き目（rank fusion）",
+   "status": "付いた",
+   "note": "RRF は各リストでの順位 r に対して 1/(k+r) を足し合わせる。比較相手は Condorcet・CombMNZ・最良の単独システム。",
+   "quotes": [
+    {
+     "file": "cormack-2009-rrf.txt",
+     "line": 11,
+     "text": "Reciprocal Rank Fusion (RRF), a simple method for com-",
+     "ja": "Reciprocal Rank Fusion（RRF）は、〜を組み合わせる単純な方法",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "cormack-2009-rrf.txt",
+     "line": 26,
+     "text": "indicated that k = 60 was near-optimal,",
+     "ja": "k = 60 がほぼ最適であることを示した",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "cormack-2009-rrf.txt",
+     "line": 49,
+     "text": "performs Condorcet, CombMNZ and the best system by 4%",
+     "ja": "Condorcet・CombMNZ・最良のシステムを 4%（次行: 〜5% 平均で）上回る",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "aslam-2001-models-for-metasearch.txt",
+     "line": 24,
+     "text": "ally outperform the best input system and are competitive",
+     "ja": "（たいてい）入力のうち最良のシステムを上回り、〜と競り合う",
+     "mark": "〔論文〕"
+    }
+   ]
+  },
+  {
+   "claim": "質問ごとにどのソースを出すか・どこに置くかを選ぶ方法と難しさ（vertical selection / presentation）",
+   "status": "付いた",
+   "note": "画像などの縦割り（vertical）は、ウェブ結果の決まった位置（スロット）にブロックとして差し込む設計が先行研究で使われている。",
+   "quotes": [
+    {
+     "file": "arguello-2017-aggregated-search.txt",
+     "line": 1664,
+     "text": "The goal of vertical selection is to decide which verticals to present in",
+     "ja": "vertical selection の目的は、どの vertical を出すかを決めることである",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "arguello-2017-aggregated-search.txt",
+     "line": 1986,
+     "text": "vertical presentation is a more difficult task than vertical selection,",
+     "ja": "vertical をどこに置くかは、どれを出すかより難しい課題である",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "arguello-2017-aggregated-search.txt",
+     "line": 2028,
+     "text": "vertical blocks can only be presented in specific slots within the web",
+     "ja": "vertical のブロックは、ウェブ（結果）の中の決まったスロットにだけ置ける",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "arguello-2017-aggregated-search.txt",
+     "line": 937,
+     "text": "Query string features. Query string features consider the pres-",
+     "ja": "クエリ文字列の特徴。クエリ文字列の特徴は（特定の語の）有無を見る",
+     "mark": "〔論文〕"
+    }
+   ]
+  },
+  {
+   "claim": "小さな自前索引の順位付け（BM25・フィールドの重み）と日本語で足りないもの",
+   "status": "付いた",
+   "note": "FTS5 の bm25() は列ごとに重みを渡せる。trigram は3文字未満の語に一致しない。日本語は n-gram と形態素解析で漏れとノイズが逆になる。",
+   "quotes": [
+    {
+     "file": "sqlite-fts5-doc.md",
+     "line": 1484,
+     "text": "the bm25() SQL function, each column of the table may be assigned a different",
+     "ja": "bm25() 関数では、表の各列に別々の（重みを）割り当てられる",
+     "mark": "〔公式〕"
+    },
+    {
+     "file": "sqlite-fts5-doc.md",
+     "line": 893,
+     "text": "Substrings consisting of fewer than 3 unicode characters do not match any",
+     "ja": "3文字（Unicode）未満の部分文字列は、どの〜にも一致しない",
+     "mark": "〔公式〕"
+    },
+    {
+     "file": "robertson-2009-prf-bm25-beyond.txt",
+     "line": 1170,
+     "text": "documents which are structured into a set of ﬁelds or streams.",
+     "ja": "フィールド（ストリーム）の集まりとして構造化された文書",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "elastic-japanese-fulltext.md",
+     "line": 69,
+     "text": "（検索漏れが少ないが、検索ノイズが多い）",
+     "mark": "〔公式〕n-gram について"
+    },
+    {
+     "file": "elastic-japanese-fulltext.md",
+     "line": 71,
+     "text": "（検索ノイズが少ないが、検索漏れが多い）",
+     "mark": "〔公式〕形態素解析について"
+    }
+   ]
+  },
+  {
+   "claim": "質問の書き換え・重複除去・多様化が効く条件と害",
+   "status": "一部だけ",
+   "note": "多様化（MMR）の原典は取れた。綴り直しとクエリ拡張の章（Stanford IR 教科書）は接続が切れて取れなかった。",
+   "quotes": [
+    {
+     "file": "carbonell-1998-mmr.txt",
+     "line": 14,
+     "text": "mal Marginal Relevance (MMR) criterion strives to re-",
+     "ja": "（Maxi）mal Marginal Relevance（MMR）の基準は、〜を減らそうとする（次行: 冗長さを減らしつつクエリへの関連を保つ）",
+     "mark": "〔論文〕"
+    }
+   ]
+  },
+  {
+   "claim": "これらの手法の元になった原典・研究はあるか",
+   "status": "付いた",
+   "note": "RRF は Cormack ら 2009、メタ検索の Borda 型は Aslam と Montague 2001、BM25F は Robertson と Zaragoza、MMR は Carbonell と Goldstein 1998、統合検索は Arguello 2017。",
+   "quotes": [
+    {
+     "file": "cormack-2009-rrf.txt",
+     "line": 1,
+     "text": "Reciprocal Rank Fusion outperforms Condorcet and",
+     "mark": "〔論文〕題名"
+    }
+   ]
+  }
+ ],
+ "unreached": [
+  "Manning ら Introduction to Information Retrieval の各章（nlp.stanford.edu への接続が切断された）",
+  "Arguello ら 2009 Sources of evidence for vertical selection（404）",
+  "DEWS2004 のメタ検索の結果マージ論文（空の応答）、wikidocs と issoh の FTS5 日本語検証記事（403）",
+  "chain.py（OpenAlex）での引用たどりはこの環境から接続できず、後ろへは Cormack 2009 の参考文献から Aslam と Montague をたどった"
+ ]
+}

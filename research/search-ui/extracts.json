@@ -1,0 +1,165 @@
+{
+ "title": "Toki 検索の UI/UX を Google に近づける方法",
+ "question": "検索エンジンのホームと結果ページを、Google に近い使い心地にするには何をどう作ればよいか。",
+ "stopped": "約束で打ち切った（依頼の中心が実装のため1周で止めた）。要る主張6個のうち5個に原文が付き、1個は一部だけ。",
+ "claims": [
+  {
+   "claim": "検索 UI の知見はどこに集まっているか（場）",
+   "status": "付いた",
+   "note": "検索役2本が挙げた場は Hearst の Search User Interfaces（無料公開）・Nielsen Norman Group・Baymard・SIGIR/CIKM/CHIIR・W3C の APG・Google Research。日本語の SERP 設計の一次資料は見つからなかった。",
+   "quotes": [
+    {
+     "file": "hearst-2009-sui-ch5-results.md",
+     "line": 18,
+     "text": "The most common way that search results are displayed is as a vertical list of information summarizing the retrieved documents.",
+     "ja": "検索結果のいちばん一般的な見せ方は、取り出した文書を要約した情報の縦のリストである。",
+     "mark": "〔論文〕書籍"
+    }
+   ]
+  },
+  {
+   "claim": "Google に近い検索 UI を成り立たせている要素と、利用者の行動への効き方",
+   "status": "付いた",
+   "note": "入力欄にキーワードを打ち、縦のリストで結果を見る形。検索窓は「打ち込める小さな箱」として探される。",
+   "quotes": [
+    {
+     "file": "hearst-2009-sui-ch1-design.md",
+     "line": 20,
+     "text": "However, the typical search interface today is of the form: type-keywords-in-entry-form, view-results-in-a-vertical-list.",
+     "ja": "しかし今日の典型的な検索インターフェースは、入力欄にキーワードを打ち、縦のリストで結果を見る、という形である。",
+     "mark": "〔論文〕書籍"
+    },
+    {
+     "file": "nng-2001-search-visible-simple.md",
+     "line": 51,
+     "text": "they typically scan the homepage looking for \"the little box where I can type.\"",
+     "ja": "利用者はたいていホームページを流し見して「文字を打てる小さな箱」を探す。",
+     "mark": "〔観察〕"
+    },
+    {
+     "file": "nng-2001-search-visible-simple.md",
+     "line": 57,
+     "text": "The search input field should be wide enough to contain the typical query; if the box is too small, the query will scroll and diminish usability.",
+     "ja": "検索の入力欄は、典型的なクエリが収まる幅にする。箱が小さすぎるとクエリがスクロールして使いにくくなる。",
+     "mark": "〔観察〕"
+    },
+    {
+     "file": "arxiv-2301.08613-evolution-serp.txt",
+     "line": 30,
+     "text": "content from different verticals and including more features that",
+     "ja": "別々の vertical の内容（を取り込み）、〜する機能を増やしている（次行: 直接の答えを出す）",
+     "mark": "〔論文〕"
+    }
+   ]
+  },
+  {
+   "claim": "結果1件の見せ方（題名・URL・抜粋・強調）",
+   "status": "付いた",
+   "note": "題名・URL・クエリに合わせた抜粋の組。強調は多すぎると助けにならないという実験がある。",
+   "quotes": [
+    {
+     "file": "hearst-2009-sui-ch5-results.md",
+     "line": 22,
+     "text": "Even the most relevant document is unlikely to be selected if the title is uninformative or misleading.",
+     "ja": "いちばん関連する文書でも、題名が情報に乏しいか紛らわしければ、選ばれにくい。",
+     "mark": "〔論文〕書籍"
+    },
+    {
+     "file": "hearst-2009-sui-ch5-results.md",
+     "line": 39,
+     "text": "Where possible, all the query terms should appear in the surrogate, reflecting their relationship to the corresponding Web page.",
+     "ja": "できるかぎり、クエリの語はすべて結果の表示（surrogate）に出し、そのページとの関係を映すべきである。",
+     "mark": "〔論文〕書籍"
+    },
+    {
+     "file": "hearst-2009-sui-ch5-results.md",
+     "line": 34,
+     "text": "URL for B is shorter, in characters, than A",
+     "ja": "B の URL のほうが A より文字数が短い（クリックされやすさと結びついた特徴の1つ）",
+     "mark": "〔論文〕書籍"
+    },
+    {
+     "file": "zhang-2018-snippet-highlighting.md",
+     "line": 273,
+     "text": "too much highlighted terms may not be helpful for users and a small number of long highlighted snippet terms can help them",
+     "ja": "強調された語が多すぎると利用者の助けにならないことがあり、少数の長い強調語は〜の助けになりうる",
+     "mark": "〔論文〕"
+    }
+   ]
+  },
+  {
+   "claim": "入力中の候補（オートコンプリート）と操作",
+   "status": "付いた",
+   "note": "候補は少なく保ち、選択中の候補をはっきり示す。キーボードは下矢印で候補へ、Escape で閉じる。",
+   "quotes": [
+    {
+     "file": "mitra-2014-qac-interactions.txt",
+     "line": 22,
+     "text": "likely to engage with auto-completion after typing about half of the",
+     "ja": "クエリのおよそ半分を打ったあとに、オートコンプリートを使いやすい",
+     "mark": "〔論文〕"
+    },
+    {
+     "file": "baymard-2022-autocomplete-design.md",
+     "line": 240,
+     "text": "The lengthy list can cause users a degree of choice paralysis.",
+     "ja": "長いリストは、利用者に選べなくなる状態をある程度引き起こしうる。",
+     "mark": "〔観察〕宣伝あり"
+    },
+    {
+     "file": "baymard-2022-autocomplete-design.md",
+     "line": 334,
+     "text": "Failing to clearly indicate the active autocomplete suggestion makes it more difficult for users to know which suggestion is currently active.",
+     "ja": "選択中の候補をはっきり示さないと、どの候補がいま選ばれているのか分かりにくくなる。",
+     "mark": "〔観察〕宣伝あり"
+    },
+    {
+     "file": "w3c-apg-combobox.md",
+     "line": 105,
+     "text": "Escape: Dismisses the popup if it is visible.",
+     "ja": "Escape: ポップアップが見えていれば閉じる。",
+     "mark": "〔公式〕"
+    }
+   ]
+  },
+  {
+   "claim": "表示の速さ・待ち時間は利用にどれくらい響くか",
+   "status": "付いた",
+   "quotes": [
+    {
+     "file": "schurman-2009-speed-matters.txt",
+     "line": 7,
+     "text": "web search latency 100 to 400 ms reduces the daily",
+     "ja": "ウェブ検索の遅延が 100〜400 ミリ秒（増えると）、1日の〜が減る",
+     "mark": "〔論文〕測定あり"
+    },
+    {
+     "file": "schurman-2009-speed-matters.txt",
+     "line": 8,
+     "text": "number of searches per user by 0.2% to 0.6%.",
+     "ja": "利用者1人あたりの検索回数が 0.2%〜0.6%（減る）。",
+     "mark": "〔論文〕測定あり"
+    }
+   ]
+  },
+  {
+   "claim": "これらの設計の元になった原典・研究はあるか",
+   "status": "一部だけ",
+   "note": "結果1件の特徴は Clarke ら 2007（Hearst 5章が引用）、遅延は Schurman と Brutlag 2009、候補は Mitra ら 2014。「もしかして」の効果を測った原典と、遅延の Arapakis ら 2015 は取れなかった。",
+   "quotes": [
+    {
+     "file": "hearst-2009-sui-ch5-results.md",
+     "line": 24,
+     "text": "tested which features of surrogates (consisting of query-biased summaries along with a title and URL) were asso",
+     "ja": "（Clarke ら 2007 は）結果表示（クエリに合わせた要約と題名と URL）のどの特徴が〜と結びつくかを調べた",
+     "mark": "〔論文〕書籍"
+    }
+   ]
+  }
+ ],
+ "unreached": [
+  "Arapakis ら 2015 の遅延の研究（404）",
+  "「もしかして」（綴りの提案）がクリックに与える効果を測った原典（検索役が探したが見つからなかった）",
+  "2020年代の Google の結果ページを対象にした視線追跡の調査（検索役が探したが見つからなかった）"
+ ]
+}

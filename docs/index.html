@@ -3,21 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https: toki:; img-src https: data:">
 <meta name="referrer" content="no-referrer">
-<title>Toki 検索</title>
+<title>Toki</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <h1 id="logo"><a href="./">Toki</a></h1>
-  <form class="q" id="form" action="./">
-    <input type="text" name="q" id="q" placeholder="Toki で検索" autocomplete="off" autofocus>
-    <button>検索</button>
-  </form>
+<body class="home">
+  <header id="top">
+    <a id="logo" href="./" aria-label="Toki ホーム">Toki</a>
+    <form id="form" action="./" role="search" autocomplete="off">
+      <div id="box">
+        <svg class="mag" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.8l-.3-.3A6.5 6.5 0 1 0 14 15.5l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg>
+        <input type="text" name="q" id="q" aria-label="検索" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sug" spellcheck="false" autocapitalize="off" autofocus>
+        <button type="button" id="clear" aria-label="消去" hidden>×</button>
+        <ul id="sug" role="listbox" aria-label="検索候補" hidden></ul>
+      </div>
+      <input type="hidden" name="t" id="t" disabled>
+      <div id="buttons"><button type="submit">Toki 検索</button></div>
+    </form>
+  </header>
+  <nav id="tabs" aria-label="検索の種類" hidden>
+    <a id="tab-all" href="#">すべて</a>
+    <a id="tab-images" href="#">画像</a>
+  </nav>
   <p class="meta" id="about">
-    複数のソースへ同時に問い合わせ、混ぜ合わせて表示する検索エンジンです。検索はあなたのブラウザから各ソースへ直接送られ、Toki のサーバーは存在しません（履歴も保存しません）。<br>
     <span id="names"></span><br>
-    自前クローラー・DNS over HTTPS・プロキシ対応を備えた<a href="https://github.com/ka1tetsu/Toki">デスクトップ版ブラウザはこちら</a>。
+    検索はあなたの端末から各ソースへ直接送られます。<span id="links"></span>
   </p>
   <main id="out"></main>
   <footer id="foot"></footer>

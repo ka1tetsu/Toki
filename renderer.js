@@ -1,5 +1,5 @@
 const HOME = 'toki://home/';
-const SEARCH = 'toki://search/?q='; // 内蔵の Toki 検索
+const SEARCH = 'toki://home/?q='; // 内蔵の Toki 検索
 
 const $ = (id) => document.getElementById(id);
 const tabsEl = $('tabs'), viewsEl = $('views'), urlEl = $('url'), newBtn = $('new');
