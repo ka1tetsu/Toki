@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<title>Toki</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; font: 13px system-ui, sans-serif; background: #1e1f22; color: #ddd; }
+  #tabs { display: flex; gap: 2px; padding: 4px 4px 0; overflow-x: auto; }
+  .tab { display: flex; align-items: center; gap: 6px; max-width: 200px; min-width: 80px; padding: 6px 8px;
+         border-radius: 6px 6px 0 0; background: #2b2d31; cursor: default; }
+  .tab.active { background: #3a3d43; color: #fff; }
+  .tab span { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  button { background: none; border: 0; color: inherit; font: inherit; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+  button:hover { background: #4a4d55; }
+  .tab button { padding: 0 4px; }
+  #bar { display: flex; gap: 4px; padding: 4px; background: #3a3d43; }
+  #url { flex: 1; padding: 5px 10px; border: 0; border-radius: 14px; background: #1e1f22; color: #fff; font: inherit; outline: none; }
+  #views { flex: 1; position: relative; background: #fff; }
+  webview { position: absolute; inset: 0; display: none; }
+  webview.active { display: flex; }
+</style>
+</head>
+<body>
+  <div id="tabs"><button id="new" title="新しいタブ (Ctrl+T)">＋</button></div>
+  <form id="bar">
+    <button type="button" id="back" title="戻る">←</button>
+    <button type="button" id="fwd" title="進む">→</button>
+    <button type="button" id="reload" title="再読み込み">⟳</button>
+    <input id="url" placeholder="URL または検索語を入力" spellcheck="false" autocomplete="off">
+  </form>
+  <div id="views"></div>
+  <script src="renderer.js"></script>
+</body>
+</html>
