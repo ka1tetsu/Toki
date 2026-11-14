@@ -214,8 +214,9 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---- 起動
-$('names').textContent = '検索ソース: ' + [...client.sources.filter((s) => DESKTOP ? s.id !== 'wolfram' : (!s.enabled || s.enabled())), ...client.imageSources]
-  .map((s) => s.name).filter((n, i, a) => a.indexOf(n) === i).join(' · ');
+const showNames = (names) => { $('names').textContent = '検索ソース: ' + names.join(' · '); };
+if (DESKTOP) fetch('api/sources').then((r) => r.json()).then(showNames).catch(() => {});
+else showNames(client.sourceNames());
 if (DESKTOP) $('links').append(' ', el('a', { href: 'toki://crawl/' }, 'TokiBot（自前クローラー）の管理'));
 else $('links').append(' ', el('a', { href: 'https://github.com/ka1tetsu/Toki' }, 'デスクトップ版ブラウザ'));
 

@@ -7,7 +7,8 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   // fetch: 使用する fetch 関数 / local: 自前インデックスの検索関数（無ければ省略）
   // wolframAppId: Wolfram Alpha の AppID / web: ブラウザ上で動かす場合 true
-  return function createTokiSearch({ fetch, local, wolframAppId, web } = {}) {
+  // extraSources: 追加のソース（デスクトップ版が Bing・DuckDuckGo・Yahoo の結果ページを渡す）
+  return function createTokiSearch({ fetch, local, wolframAppId, web, extraSources = [] } = {}) {
     const enc = encodeURIComponent;
     const strip = (s) => String(s || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#0?39;/g, "'").replace(/\s+/g, ' ').trim();
@@ -33,6 +34,16 @@
         id: 'toki', name: 'Toki インデックス', enabled: () => !!local,
         search: async (q) => ({ results: await local(q, 10) }),
       },
+      ...extraSources,
+      {
+        // Mwmbl: 非営利の独立したウェブ索引（英語が中心）。公開 API があり Web 版からも使える
+        id: 'mwmbl', name: 'Mwmbl',
+        search: async (q) => {
+          const d = await json(`https://mwmbl.org/api/v1/search/?s=${enc(q)}`);
+          const join = (parts) => (Array.isArray(parts) ? parts.map((x) => x.value).join('') : String(parts || ''));
+          return { results: d.slice(0, 10).map((r) => ({ url: r.url, title: join(r.title), snippet: join(r.extract) })) };
+        },
+      },
       {
         id: 'wikipedia', name: 'Wikipedia',
         search: async (q) => {
@@ -47,7 +58,7 @@
         },
       },
       {
-        id: 'duckduckgo', name: 'DuckDuckGo',
+        id: 'duckduckgo', name: 'DuckDuckGo 即答',
         search: async (q) => {
           const d = await json(`https://api.duckduckgo.com/?format=json&no_html=1&skip_disambig=1&kp=-2&q=${enc(q)}`);
           const text = d.Answer || d.AbstractText || d.Definition;
@@ -177,19 +188,24 @@
     ];
 
     // --- どのソースを重く見るか（vertical selection・Arguello 2017 の query string features）
-    const TECH = /\b(error|exception|undefined|api|sdk|npm|pip|git|github|linux|docker|sql|css|html|javascript|typescript|python|java|rust|golang|node|react|vue|regex|function|async|install|compile|stack ?trace|library|framework|bug|code)\b|[(){}\[\];=<>]|::|エラー|例外|実装|インストール|コンパイル|ライブラリ|プログラ|コード|関数|変数|バグ/i;
+    const TECH = /\b(error|exception|undefined|api|sdk|npm|pip|git|github|linux|docker|sql|css|html|javascript|typescript|python|java|rust|golang|node|react|vue|regex|function|async|install|compile|stack ?trace|library|framework|bug|code|vim|emacs|bash|shell|terminal|command|kubernetes|aws|json|http|android|ios|windows|macos)\b|[(){}\[\];=<>]|::|エラー|例外|実装|インストール|コンパイル|ライブラリ|プログラ|コード|関数|変数|バグ/i;
     const ACADEMIC = /\b(paper|theorem|arxiv|proof|survey|algorithm|quantum|neural|equation)\b|論文|定理|証明|アルゴリズム/i;
     const BOOK = /\b(book|novel|author|isbn)\b|小説|著者|書籍|絵本|文庫/i;
     const IMAGE = /\b(images?|photos?|pictures?|wallpapers?|logo|icon|illustrations?)\b|画像|写真|イラスト|壁紙|ロゴ|アイコン/i;
 
+    // ウェブ全体を対象にするソース。互いに同じ土俵で順位を付けているので、重みは近くそろえる。
+    // 特定分野のソース（vertical）は、質問の種類が合うときだけ同じ土俵に上げる。
     function weights(q) {
       const tech = TECH.test(q), cjk = isCJK(q);
-      const w = { toki: 1.6, wikipedia: 1.4, duckduckgo: 1.3, stackoverflow: 0.6, github: 0.6, hackernews: 0.5, archive: 0.4, openlibrary: 0.4, arxiv: 0.4 };
-      if (tech) Object.assign(w, { stackoverflow: 1.5, github: 1.3, hackernews: 0.9 });
-      if (ACADEMIC.test(q)) w.arxiv = 1.4;
-      if (BOOK.test(q)) Object.assign(w, { openlibrary: 1.2, archive: 0.8 });
-      // 英語圏のソースは、日本語の一般的な語にはほとんど当たらない
-      if (cjk && !tech) { w.stackoverflow *= 0.5; w.hackernews *= 0.5; w.github *= 0.7; }
+      const w = {
+        toki: 1.6, bing: 1.5, 'duckduckgo-web': 1.5, yahoo: 1.3, wikipedia: 1.2, mwmbl: 1.1, duckduckgo: 1.0,
+        stackoverflow: 0.3, github: 0.3, hackernews: 0.25, archive: 0.2, openlibrary: 0.2, arxiv: 0.2,
+      };
+      if (tech) Object.assign(w, { stackoverflow: 1.3, github: 1.0, hackernews: 0.6 });
+      if (ACADEMIC.test(q)) w.arxiv = 1.2;
+      if (BOOK.test(q)) Object.assign(w, { openlibrary: 1.0, archive: 0.5 });
+      // 英語が中心のソースは、日本語の質問にはほとんど当たらない
+      if (cjk) { w.mwmbl *= 0.5; if (!tech) { w.stackoverflow *= 0.5; w.hackernews *= 0.5; } }
       return w;
     }
 
@@ -207,7 +223,10 @@
     // Reciprocal Rank Fusion（Cormack ら 2009）: 各ソースでの順位 r に対し 重み/(k+r) を足す。k=60。
     // ソース間で点数の尺度がそろっていなくても、順位だけで混ぜられる。
     const K = 60;
-    function fuse(lists, terms) {
+    function fuse(lists, terms, q = '') {
+      const norm = (t) => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const nq = norm(q);
+      const cjkQuery = isCJK(q);
       const byKey = new Map();
       for (const { name, weight, items } of lists) {
         items.forEach((r, i) => {
@@ -221,17 +240,28 @@
       }
       const all = [...byKey.values()];
       for (const e of all) {
-        // 題名・抜粋・URL に検索語がどれだけ出ているか（Clarke ら 2007 の、選ばれやすい結果の特徴）
+        // 題名・抜粋・URL に検索語がどれだけ出ているか（Clarke ら 2007 の、選ばれやすい結果の特徴）。
+        // 各エンジンがすでに関連度で並べているので、ここでは控えめに効かせる
+        let safeUrl = e.url;
+        try { safeUrl = decodeURIComponent(e.url); } catch {}
         const title = coverage(e.title, terms);
-        const any = coverage(`${e.title} ${e.snippet || ''} ${decodeURIComponent(e.url)}`, terms);
-        e.score = e.rrf * (0.4 + 0.6 * any) * (1 + 0.5 * title);
+        const any = coverage(`${e.title} ${e.snippet || ''} ${safeUrl}`, terms);
+        const nt = norm(e.title);
+        // 題名が質問そのもの（または質問で始まる）なら、その語を扱うページそのものである見込みが高い
+        const exact = nq && (nt === nq || nt.startsWith(nq + ' - ') || nt.startsWith(nq + ' | ') || nt.startsWith(nq + ' – ')) ? 1.3 : 1;
+        // 日本語の質問（漢字だけの語を含む）に対して、漢字はあるが仮名が1つも無い結果は中国語の見込みが高い
+        const body = `${e.title} ${e.snippet || ''}`;
+        const foreign = cjkQuery && /[\u4e00-\u9fff]/.test(body) && !/[\u3040-\u30ff]/.test(body) ? 0.6 : 1;
+        // 検索語が題名にも抜粋にも URL にも出ない結果は、エンジン側の取り違えの見込みが高い
+        const match = any === 0 ? 0.35 : 0.7 + 0.3 * any;
+        e.score = e.rrf * match * (1 + 0.3 * title) * exact * foreign;
       }
       // 多様化（MMR・Carbonell & Goldstein 1998 の考え方）: 同じサイトが続くほど割り引く
       const out = [], perHost = new Map();
       while (all.length) {
         let best = 0, bestVal = -1;
         all.forEach((e, i) => {
-          const v = e.score * Math.pow(0.8, perHost.get(hostOf(e.url)) || 0);
+          const v = e.score * Math.pow(0.9, perHost.get(hostOf(e.url)) || 0);
           if (v > bestVal) { bestVal = v; best = i; }
         });
         const [e] = all.splice(best, 1);
@@ -242,6 +272,27 @@
     }
 
     const active = (list) => list.filter((s) => !s.enabled || s.enabled());
+
+    // 全部の応答を待つが、SOFT ミリ秒を過ぎたら、主要なソース（core）がそろった時点で打ち切る。
+    // 待ち時間は利用に響く（Schurman & Brutlag 2009）ので、遅い脇のソースに全体を待たせない
+    const SOFT = 1200;
+    const CORE = new Set(['toki', 'bing', 'duckduckgo-web', 'yahoo', 'wikipedia', 'mwmbl']);
+    function settle(list, q) {
+      return new Promise((resolve) => {
+        const out = list.map(() => ({ status: 'rejected', reason: new Error('timeout') }));
+        let pending = list.length, pendingCore = list.filter((s) => CORE.has(s.id)).length, late = false, done = false;
+        const finish = () => { if (!done) { done = true; resolve(out); } };
+        const check = () => { if (!pending || (late && !pendingCore)) finish(); };
+        setTimeout(() => { late = true; check(); }, SOFT);
+        list.forEach((s, i) => {
+          Promise.resolve().then(() => s.search(q)).then(
+            (value) => { out[i] = { status: 'fulfilled', value }; },
+            (reason) => { out[i] = { status: 'rejected', reason }; },
+          ).then(() => { pending--; if (CORE.has(s.id)) pendingCore--; check(); });
+        });
+        if (!list.length) finish();
+      });
+    }
 
     async function searchImages(q) {
       const act = active(imageSources);
@@ -271,9 +322,13 @@
       const act = active(sources), w = weights(q), terms = termsOf(q);
       const tech = TECH.test(q), wantsImage = IMAGE.test(q);
       const [settled, img] = await Promise.all([
-        Promise.allSettled(act.map((s) => s.search(q))),
+        settle(act, q),
         // 技術的な質問には画像を出さない（どの vertical を出すかの選択）
-        tech && !wantsImage ? { images: [], status: [] } : searchImages(q).catch(() => ({ images: [], status: [] })),
+        tech && !wantsImage ? { images: [], status: [] } : Promise.race([
+          searchImages(q).catch(() => ({ images: [], status: [] })),
+          // 画像ブロックのために、ウェブの結果を長く待たせない
+          new Promise((r) => setTimeout(() => r({ images: [], status: [] }), 1800)),
+        ]),
       ]);
       const lists = [], instants = [], status = [];
       let suggestion = '';
@@ -286,7 +341,7 @@
         if (r.value.suggestion && !suggestion) suggestion = r.value.suggestion;
         lists.push({ name: s.name, weight: w[s.id] ?? 0.5, items });
       });
-      const results = fuse(lists, terms);
+      const results = fuse(lists, terms, q);
       // 画像ブロックを置く位置（Arguello 2017 の slot）: 画像を求める語なら先頭、それ以外は3件目の後ろ
       const images = img.images.slice(0, 12);
       const imageSlot = images.length < 4 ? -1 : wantsImage ? 0 : 3;
@@ -300,6 +355,9 @@
       return (d[1] || []).filter((s) => typeof s === 'string');
     }
 
-    return { searchAll, searchImages, suggest, sources, imageSources, fuse, termsOf };
+    // 画面に出すソース名の一覧
+    const sourceNames = () => [...active(sources), ...imageSources].map((x) => x.name).filter((n, i, arr) => arr.indexOf(n) === i);
+
+    return { searchAll, searchImages, suggest, sources, imageSources, sourceNames, fuse, termsOf };
   };
 });

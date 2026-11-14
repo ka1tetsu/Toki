@@ -66,6 +66,7 @@ async function handle(req) {
   if (u.hostname !== 'home') return Response.redirect('toki://home/' + (q ? '?q=' + encodeURIComponent(q) : ''), 302);
   if (u.pathname === '/api/search') return json(await engine.searchAll(q));
   if (u.pathname === '/api/images') return json(await engine.searchImages(q));
+  if (u.pathname === '/api/sources') return json(engine.sourceNames());
   const file = STATIC[u.pathname];
   if (!file) return new Response('Not found', { status: 404 });
   return new Response(fs.readFileSync(path.join(DOCS, file[0])), { headers: { 'content-type': file[1] } });
