@@ -67,6 +67,7 @@ async function handle(req) {
   if (u.pathname === '/api/search') return json(await engine.searchAll(q));
   if (u.pathname === '/api/images') return json(await engine.searchImages(q));
   if (u.pathname === '/api/sources') return json(engine.sourceNames());
+  if (u.pathname === '/api/suggest') return json(q ? await engine.suggest(q) : []);
   const file = STATIC[u.pathname];
   if (!file) return new Response('Not found', { status: 404 });
   return new Response(fs.readFileSync(path.join(DOCS, file[0])), { headers: { 'content-type': file[1] } });

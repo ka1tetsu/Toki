@@ -5,7 +5,7 @@ const DESKTOP = location.protocol === 'toki:';
 const client = createTokiSearch({ fetch: (u, o) => fetch(u, o), web: true });
 const api = (path, q) => fetch(`${path}?q=${encodeURIComponent(q)}`).then((r) => r.json());
 const engine = DESKTOP
-  ? { searchAll: (q) => api('api/search', q), searchImages: (q) => api('api/images', q), suggest: client.suggest }
+  ? { searchAll: (q) => api('api/search', q), searchImages: (q) => api('api/images', q), suggest: (q) => api('api/suggest', q) }
   : client;
 
 const $ = (id) => document.getElementById(id);
@@ -180,7 +180,7 @@ async function loadSug() {
   let items = [];
   try { items = await engine.suggest(prefix); } catch {}
   if (seq !== sugSeq || document.activeElement !== input) return;
-  items = items.filter((s) => s.toLowerCase() !== prefix.toLowerCase()).slice(0, 8); // 候補は少なく保つ（Baymard 2022）
+  items = items.filter((s) => s.toLowerCase() !== prefix.toLowerCase()).slice(0, 10); // 候補は 10 件まで（多すぎると選べなくなる: Baymard 2022）
   if (!items.length) return closeSug();
   list.replaceChildren(...items.map((s, n) => {
     // 打った部分はそのまま、補われる部分を太字にする

@@ -25,7 +25,7 @@ npm start
 | `TOKI_PROXY` | プロキシ。例: `socks5://127.0.0.1:9050`（Tor） |
 | `TOKI_WOLFRAM_APPID` | Wolfram Alpha の AppID（設定すると検索ソースに加わる） |
 | `TOKI_INDEX_VISITS` | `off` で閲覧ページの自動インデックスを止める |
-| `TOKI_ENGINES` | `off` で Bing・DuckDuckGo・Yahoo への問い合わせを止める |
+| `TOKI_ENGINES` | `off` で Bing・DuckDuckGo・Yahoo・Brave への問い合わせを止める |
 
 ショートカット: `Ctrl+T` 新規タブ / `Ctrl+W` 閉じる / `Ctrl+L` アドレスバー / `Ctrl+R` 再読み込み / `Alt+←→` 戻る・進む / `F12` 開発者ツール
 
@@ -56,7 +56,7 @@ DoH が防ぐのは DNS レベルの検閲です。IP 遮断や DPI による遮
 | ソース | 内容 | キー |
 | --- | --- | --- |
 | Toki インデックス | 自前クローラー **TokiBot** と閲覧ページの全文索引（SQLite FTS5、日本語対応） | 不要 |
-| Bing / DuckDuckGo / Yahoo | 一般のウェブ検索。各エンジンの結果ページを取得して読み取る（**デスクトップ版のみ**。`TOKI_ENGINES=off` で止める） | 不要 |
+| Bing / DuckDuckGo / Yahoo / Brave | 一般のウェブ検索。各エンジンの結果ページを取得して読み取る（Bing と Yahoo は 2 ページ分。**デスクトップ版のみ**。`TOKI_ENGINES=off` で止める） | 不要 |
 | Mwmbl | 非営利の独立したウェブ索引（英語が中心） | 不要 |
 | Wikipedia | 記事検索・入力中の候補・綴りの候補（日本語/英語を自動判定） | 不要 |
 | DuckDuckGo 即答 | インスタントアンサーと関連トピック | 不要 |
@@ -67,9 +67,9 @@ DoH が防ぐのは DNS レベルの検閲です。IP 遮断や DPI による遮
 - `toki://crawl/` に URL を入れると TokiBot がそのサイトをクロールして索引に追加します（最大 200 ページ・深さ 2、robots.txt を尊重）
 - 索引は端末内（Electron の userData の `index.db`）にのみ保存されます
 - ソースの追加は `docs/sources.js` の配列に `{ id, name, search(q) }` を足すだけです
-- Bing・DuckDuckGo・Yahoo は公開 API が無い（Yahoo! Search BOSS と Bing Web Search API は提供終了）ため、結果ページを読み取っています。各社の利用規約が想定する使い方ではなく、ページの作りが変わったりロボット確認が出たりすると、そのエンジンだけ結果が出なくなります（結果ページ下部に「×」と表示）
+- Bing・DuckDuckGo・Yahoo・Brave は公開 API が無い（Yahoo! Search BOSS と Bing Web Search API は提供終了）ため、結果ページを読み取っています。各社の利用規約が想定する使い方ではなく、ページの作りが変わったりロボット確認が出たりすると、そのエンジンだけ結果が出なくなります（結果ページ下部に「×」と表示）
 - Yandex はロボット確認が出て取得できないため未実装です。結果ページ下部に Bing / Yandex / Google / DuckDuckGo で同じ語を検索するリンクがあります
-- 入力中の候補は、打った文字を Wikipedia に送って取得します
+- 入力中の候補は、打った文字を Wikipedia に送って取得します。デスクトップ版では DuckDuckGo と Yahoo の候補も混ぜます（`TOKI_ENGINES=off` で Wikipedia だけになります）
 
 設計の根拠にした文献と抜き書きは `research/search-relevance/` と `research/search-ui/` にあります（`map.md` と `extracts.json`）。
 
@@ -77,7 +77,7 @@ DoH が防ぐのは DNS レベルの検閲です。IP 遮断や DPI による遮
 
 `docs/` は Toki 検索の Web 版で、https://ka1tetsu.github.io/Toki/ で公開しています。サーバーを持たない静的サイトで、閲覧者のブラウザから各検索ソースへ直接問い合わせます。デスクトップ版の `toki://home/` も同じファイルを表示します。
 
-Web 版にできないこと（ブラウザの制約）: Bing・DuckDuckGo・Yahoo の一般ウェブ検索、自前クローラーと索引、DNS over HTTPS、プロキシ、タブ付きブラウザ本体、arXiv と Wolfram Alpha のソース。これらはデスクトップ版で使えます。Web 版の一般ウェブ検索は Mwmbl と Wikipedia だけです。
+Web 版にできないこと（ブラウザの制約）: Bing・DuckDuckGo・Yahoo・Brave の一般ウェブ検索、自前クローラーと索引、DNS over HTTPS、プロキシ、タブ付きブラウザ本体、arXiv と Wolfram Alpha のソース。これらはデスクトップ版で使えます。Web 版の一般ウェブ検索は Mwmbl と Wikipedia だけです。
 
 ## 構成
 
@@ -88,7 +88,7 @@ renderer.js        タブとアドレスバーの制御
 preload.js         メニュー操作の橋渡し
 search/index.js    全文索引とクローラー
 search/sources.js  デスクトップ版の検索ソース設定
-search/engines.js  Bing・DuckDuckGo・Yahoo の結果ページの読み取り
+search/engines.js  Bing・DuckDuckGo・Yahoo・Brave の結果ページの読み取りと入力候補
 docs/sources.js    検索ソース・画像ソース・順位の統合（デスクトップ版と Web 版で共有）
 docs/              検索画面（index.html / app.js / style.css）。Web 版と toki://home/ の両方で使う
 research/          設計の根拠にした調査（地図・記録・抜き書き）

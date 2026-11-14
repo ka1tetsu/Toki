@@ -2,14 +2,15 @@
 const { net } = require('electron');
 const index = require('./index');
 const createTokiSearch = require('../docs/sources.js');
-const { createEngineSources } = require('./engines');
+const { createEngineSources, createSuggesters } = require('./engines');
 
 const fetch = (url, opts) => net.fetch(url, opts);
 
 module.exports = createTokiSearch({
   fetch,
-  // 一般のウェブ検索（Bing・DuckDuckGo・Yahoo）。TOKI_ENGINES=off で止める
+  // 一般のウェブ検索（Bing・DuckDuckGo・Yahoo・Brave）と入力候補。TOKI_ENGINES=off で止める
   extraSources: process.env.TOKI_ENGINES === 'off' ? [] : createEngineSources(fetch),
+  extraSuggesters: process.env.TOKI_ENGINES === 'off' ? [] : createSuggesters(fetch),
   local: (q, n) => index.search(q, n),
   wolframAppId: process.env.TOKI_WOLFRAM_APPID,
 });

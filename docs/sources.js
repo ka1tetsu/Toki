@@ -8,7 +8,7 @@
   // fetch: 使用する fetch 関数 / local: 自前インデックスの検索関数（無ければ省略）
   // wolframAppId: Wolfram Alpha の AppID / web: ブラウザ上で動かす場合 true
   // extraSources: 追加のソース（デスクトップ版が Bing・DuckDuckGo・Yahoo の結果ページを渡す）
-  return function createTokiSearch({ fetch, local, wolframAppId, web, extraSources = [] } = {}) {
+  return function createTokiSearch({ fetch, local, wolframAppId, web, extraSources = [], extraSuggesters = [] } = {}) {
     const enc = encodeURIComponent;
     const strip = (s) => String(s || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#0?39;/g, "'").replace(/\s+/g, ' ').trim();
@@ -41,7 +41,7 @@
         search: async (q) => {
           const d = await json(`https://mwmbl.org/api/v1/search/?s=${enc(q)}`);
           const join = (parts) => (Array.isArray(parts) ? parts.map((x) => x.value).join('') : String(parts || ''));
-          return { results: d.slice(0, 10).map((r) => ({ url: r.url, title: join(r.title), snippet: join(r.extract) })) };
+          return { results: d.slice(0, 20).map((r) => ({ url: r.url, title: join(r.title), snippet: join(r.extract) })) };
         },
       },
       {
@@ -198,7 +198,7 @@
     function weights(q) {
       const tech = TECH.test(q), cjk = isCJK(q);
       const w = {
-        toki: 1.6, bing: 1.5, 'duckduckgo-web': 1.5, yahoo: 1.3, wikipedia: 1.0, mwmbl: 1.1, duckduckgo: 1.0,
+        toki: 1.6, bing: 1.5, 'duckduckgo-web': 1.5, brave: 1.4, yahoo: 1.3, wikipedia: 1.0, mwmbl: 1.1, duckduckgo: 1.0,
         stackoverflow: 0.3, github: 0.3, hackernews: 0.25, archive: 0.2, openlibrary: 0.2, arxiv: 0.2,
       };
       if (tech) Object.assign(w, { stackoverflow: 1.3, github: 1.0, hackernews: 0.6 });
@@ -285,7 +285,7 @@
     // 全部の応答を待つが、SOFT ミリ秒を過ぎたら、主要なソース（core）がそろった時点で打ち切る。
     // 待ち時間は利用に響く（Schurman & Brutlag 2009）ので、遅い脇のソースに全体を待たせない
     const SOFT = 1200;
-    const CORE = new Set(['toki', 'bing', 'duckduckgo-web', 'yahoo', 'wikipedia', 'mwmbl']);
+    const CORE = new Set(['toki', 'bing', 'duckduckgo-web', 'brave', 'yahoo', 'wikipedia', 'mwmbl']);
     function settle(list, q) {
       return new Promise((resolve) => {
         const out = list.map(() => ({ status: 'rejected', reason: new Error('timeout') }));
@@ -358,10 +358,23 @@
       return { instants, results, images, imageSlot, suggestion, status: [...status, ...img.status.map((s) => ({ ...s, name: s.name + '（画像）' }))], ms: Date.now() - t0 };
     }
 
-    // 入力中の候補（Wikipedia の見出し語）
+    // 入力中の候補。Wikipedia の見出し語に、追加の候補元（デスクトップ版では DuckDuckGo と Yahoo）を混ぜる。
+    // 候補元ごとの順位を交互に取り、重複を除いて最大 10 件
     async function suggest(prefix) {
-      const d = await json(`${wiki(prefix)}/w/api.php?action=opensearch&limit=8&namespace=0&format=json&origin=*&search=${enc(prefix)}`);
-      return (d[1] || []).filter((s) => typeof s === 'string');
+      const wikipedia = async (p) => {
+        const d = await json(`${wiki(p)}/w/api.php?action=opensearch&limit=8&namespace=0&format=json&origin=*&search=${enc(p)}`);
+        return (d[1] || []).filter((x) => typeof x === 'string');
+      };
+      const lists = (await Promise.allSettled([...extraSuggesters, wikipedia].map((f) => f(prefix))))
+        .map((r) => (r.status === 'fulfilled' ? r.value : []));
+      const out = [], seen = new Set([prefix.toLowerCase()]);
+      for (let i = 0; lists.some((l) => l.length > i) && out.length < 10; i++) {
+        for (const l of lists) {
+          const v = l[i];
+          if (v && !seen.has(v.toLowerCase()) && out.length < 10) { seen.add(v.toLowerCase()); out.push(v); }
+        }
+      }
+      return out;
     }
 
     // 画面に出すソース名の一覧
