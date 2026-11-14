@@ -44,8 +44,16 @@ DoH が防ぐのは DNS レベルの検閲です。IP 遮断や DPI による遮
 
 - ホーム画面の入力欄に URL を入れると TokiBot がそのサイトをクロールして索引に追加します（最大 200 ページ・深さ 2、robots.txt を尊重）
 - 索引は端末内（Electron の userData の `index.db`）にのみ保存されます
-- ソースの追加は `search/sources.js` の配列に `{ id, name, search(q) }` を足すだけです
+- ソースの追加は `docs/sources.js` の配列に `{ id, name, search(q) }` を足すだけです
 - Yahoo! Search BOSS と Bing Web Search API は提供終了、Yandex Search API は有料契約が必要なため未実装です。結果ページ下部に Bing / Yandex / Google / DuckDuckGo で同じ語を検索するリンクがあります
+
+## Web 版（GitHub Pages）
+
+`docs/` は Toki 検索の Web 版です。サーバーを持たない静的サイトで、閲覧者のブラウザから各検索ソースへ直接問い合わせます。
+
+公開手順: GitHub の **Settings → Pages → Build and deployment** で Source を「Deploy from a branch」、フォルダを `/docs` にして保存すると、`https://ka1tetsu.github.io/Toki/` で公開されます。
+
+Web 版にできないこと（ブラウザの制約）: 自前クローラーと索引、DNS over HTTPS、プロキシ、タブ付きブラウザ本体、arXiv と Wolfram Alpha のソース。これらはデスクトップ版で使えます。
 
 ## 構成
 
@@ -55,6 +63,8 @@ index.html         ブラウザ UI
 renderer.js        タブとアドレスバーの制御
 preload.js         メニュー操作の橋渡し
 search/index.js    全文索引とクローラー
-search/sources.js  検索ソースと結果の統合
+search/sources.js  デスクトップ版の検索ソース設定
+docs/sources.js    検索ソースと結果の統合（デスクトップ版と Web 版で共有）
+docs/              Web 版（index.html / app.js / style.css）
 search/pages.js    toki:// の内蔵ページ
 ```

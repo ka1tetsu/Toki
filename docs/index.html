@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https:">
+<meta name="referrer" content="no-referrer">
+<title>Toki 検索</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1 id="logo"><a href="./">Toki</a></h1>
+  <form class="q" id="form" action="./">
+    <input type="text" name="q" id="q" placeholder="Toki で検索" autocomplete="off" autofocus>
+    <button>検索</button>
+  </form>
+  <p class="meta" id="about">
+    複数のソースへ同時に問い合わせ、混ぜ合わせて表示する検索エンジンです。検索はあなたのブラウザから各ソースへ直接送られ、Toki のサーバーは存在しません（履歴も保存しません）。<br>
+    <span id="names"></span><br>
+    自前クローラー・DNS over HTTPS・プロキシ対応を備えた<a href="https://github.com/ka1tetsu/Toki">デスクトップ版ブラウザはこちら</a>。
+  </p>
+  <main id="out"></main>
+  <footer id="foot"></footer>
+  <script src="sources.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
